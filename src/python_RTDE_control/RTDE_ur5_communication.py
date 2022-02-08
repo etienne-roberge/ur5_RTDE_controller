@@ -3,6 +3,8 @@ import rtde_receive
 import time
 import numpy as np
 import threading
+import csv
+import os.path
 
 
 class RTDE_ur5_communication:
@@ -48,27 +50,62 @@ class RTDE_ur5_communication:
 
     def __receiveRTDEData(self):
 
-        timeToWait = 1.0/self.freq
+        timeToWait = 1.0 / self.freq
         while self.receiveActive:
             start = time.time()
-            self.pose = self.rtde_r.getActualTCPPose()
             self.actualTcpPose = self.rtde_r.getActualTCPPose()
             self.targetTcpPose = self.rtde_r.getTargetTCPPose()
             self.actualTcpSpeed = self.rtde_r.getActualTCPSpeed()
-            self.actualTcpForce = self.rtde_r.getActualTCPPose()
-            self.actualQ = self.rtde_r.getActualTCPPose()
-            self.actualQd = np.zeros(6)
-            self.targetQ = np.zeros(6)
-           # self.rtde_r.get
+            self.actualTcpForce = self.rtde_r.getActualTCPForce()
+            self.actualQ = self.rtde_r.getActualQ()
+            self.actualQd = self.rtde_r.getActualQd()
+            self.targetQ = self.rtde_r.getTargetQ()
             end = time.time()
             duration = end - start
             if duration < timeToWait:
                 time.sleep(timeToWait - duration)
             if self.receiveCallback is not None:
-                self.receiveCallback(self.pose)
+                self.receiveCallback(self.actualTcpPose,
+                                     self.targetTcpPose,
+                                     self.actualTcpSpeed,
+                                     self.actualTcpForce,
+                                     self.actualQ,
+                                     self.actualQd,
+                                     self.targetQ)
 
     def setReceiveCallback(self, callback):
         self.receiveCallback = callback
+
+    def setCurrentPathFromCSVFile(self, filename):
+
+        if not os.path.isfile(filename):
+            print("File not found!")
+            return False
+
+        newPath = []
+
+        try:
+            with open(filename, newline='') as csvfile:
+                csvReader = csv.reader(csvfile, delimiter=',', quotechar='|')
+                for row in csvReader:
+                    if len(row) == 6:
+                        newPath.append(np.array([float(row[0]), float(row[1]), float(row[2]),
+                                                 float(row[3]), float(row[4]), float(row[5])]))
+        except IOError:
+            print("Can't open csv file!")
+            return False
+        except ValueError:
+            print("Error reading values in csv file!")
+            return False
+
+        if len(newPath) == 0:
+            print("No poses in path")
+            return False
+
+        print(newPath)
+        self.setCurrentPath(newPath)
+
+        return True
 
     def setCurrentPath(self, path):
         # check if path is a list
@@ -82,11 +119,18 @@ class RTDE_ur5_communication:
             print("path needs to be a list of pose")
 
     def startExecution(self):
+        if self.currentPath is None:
+            print("No path to execute!")
+            return False
+
         if not self.pathThread.is_alive():
             self.pathThread = threading.Thread(target=self.__executePath)
             self.pathThread.start()
         else:
             print("Already running!")
+            return False
+
+        return True
 
     def __executePath(self):
         self.isActive = True
@@ -126,6 +170,8 @@ class RTDE_ur5_communication:
         if self.pathThread.is_alive():
             self.pathThread.join()
 
+        return True
+
     def goToPathStart(self):
         if len(self.pathQList) >= 1:
             self.rtde_c.moveJ(self.pathQList[0])
@@ -134,16 +180,20 @@ class RTDE_ur5_communication:
 
 
 if __name__ == "__main__":
-    pose1 = np.array([-0.37595091, -0.43348931, 0.29035881, -0.72104235, -2.99956821, -0.01164331])
-    pose2 = np.array([0.06584268, -0.57000452, 0.29046544, 0.54908986, -3.03728964, 0.02453679])
-
-    newPath = [pose1, pose2, pose1, pose2]
+    # pose1 = np.array([-0.37595091, -0.43348931, 0.29035881, -0.72104235, -2.99956821, -0.01164331])
+    # pose2 = np.array([0.06584268, -0.57000452, 0.29046544, 0.54908986, -3.03728964, 0.02453679])
+    #
+    # newPath = [pose1, pose2, pose1, pose2]
+    #
+    # rc = RTDE_ur5_communication("192.168.1.159", 50)
+    # rc.setCurrentPath(newPath)
+    #
+    # rc.startExecution()
+    # print("aa")
+    # time.sleep(4)
+    # rc.stopPath()
+    # rc.startExecution()
 
     rc = RTDE_ur5_communication("192.168.1.159", 50)
-    rc.setCurrentPath(newPath)
-
-    rc.startExecution()
-    print("aa")
-    time.sleep(4)
-    rc.stopPath()
+    rc.setCurrentPathFromCSVFile("/home/etienne/Desktop/iros2022_ws/src/ur5_RTDE_controller/test.csv")
     rc.startExecution()

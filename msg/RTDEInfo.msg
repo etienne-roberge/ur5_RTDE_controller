@@ -1,7 +1,7 @@
-geometry_msgs/Twist actualTcpPose
-geometry_msgs/Twist targetTcpPose
-geometry_msgs/Twist actualTcpSpeed
-geometry_msgs/Twist actualTcpForce
-geometry_msgs/Twist actualQ
-geometry_msgs/Twist actualQd
-geometry_msgs/Twist targetQ
+float32[6] actualTcpPose
+float32[6] targetTcpPose
+float32[6] actualTcpSpeed
+float32[6] actualTcpForce
+float32[6] actualQ
+float32[6] actualQd
+float32[6] targetQ

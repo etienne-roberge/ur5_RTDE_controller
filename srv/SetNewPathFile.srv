@@ -1,0 +1,3 @@
+string csvPath
+---
+bool pathOpened
