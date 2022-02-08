@@ -1,0 +1,7 @@
+geometry_msgs/Twist actualTcpPose
+geometry_msgs/Twist targetTcpPose
+geometry_msgs/Twist actualTcpSpeed
+geometry_msgs/Twist actualTcpForce
+geometry_msgs/Twist actualQ
+geometry_msgs/Twist actualQd
+geometry_msgs/Twist targetQ
