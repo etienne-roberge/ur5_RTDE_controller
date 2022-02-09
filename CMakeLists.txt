@@ -52,6 +52,7 @@ catkin_python_setup()
 add_message_files(
    FILES
    RTDEInfo.msg
+   RTDETransformedInfo.msg
 )
 
 ## Generate services in the 'srv' folder
@@ -60,6 +61,7 @@ add_service_files(
    StartPath.srv
    StopPath.srv
    SetNewPathFile.srv
+   SetTransformPose.srv
  )
 
 ## Generate actions in the 'action' folder
