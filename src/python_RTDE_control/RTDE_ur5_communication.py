@@ -5,6 +5,7 @@ import numpy as np
 import threading
 import csv
 import os.path
+import signal
 
 
 class RTDE_ur5_communication:
@@ -41,12 +42,22 @@ class RTDE_ur5_communication:
         self.receiveThread = threading.Thread(target=self.__receiveRTDEData)
         self.receiveThread.start()
 
+        signal.signal(signal.SIGINT, self.__SIGINT_HANDLER)
+
     def __del__(self):
         self.rtde_c.stopScript()
         self.receiveActive = False
         self.isActive = False
         self.pathThread.join()
         self.receiveThread.join()
+
+    def __SIGINT_HANDLER(self, signum, frame):
+        self.receiveActive = False
+        self.isActive = False
+        if self.pathThread.is_alive():
+            self.pathThread.join()
+        if self.receiveThread.is_alive():
+            self.receiveThread.join()
 
     def __receiveRTDEData(self):
 
